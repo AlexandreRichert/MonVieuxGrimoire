@@ -104,7 +104,7 @@ exports.ratingBook = (req, res, next) => {
             book.averageRating = averageGrade;
             console.log(updatedRatings);
             console.log(averageGrade);
-            
+
             book.save()
                 .then(() => {
                     res.status(200).json({ message: "Note enregistrée avec succès", averageGrade });
@@ -120,5 +120,11 @@ exports.ratingBook = (req, res, next) => {
     });
 };         
 
+
+exports.getBestBooks = (req, res, next) => {
+    Book.find().sort({ averageRating: -1 }).limit(3)
+        .then(books => res.status(200).json(books))
+        .catch(error => res.status(401).json({ error }));
+};
 
 
