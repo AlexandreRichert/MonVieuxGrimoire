@@ -79,9 +79,9 @@ exports.ratingBook = (req, res, next) => {
     Book.findOne({ _id: req.params.id })
     .then((book) => {
         // Vérifier si l'utilisateur est l'auteur du livre
-        if (book.userId === userConnected) {
+        /*if (book.userId === userConnected) {
             return res.status(401).json({ message: "Vous avez publié ce livre. Vous n'êtes pas autorisé à le noter" });
-        } 
+        }*/
         const userRatingIndex = book.ratings.findIndex((rating) => rating.userId === userConnected);
         if (userRatingIndex !== -1) {
              // à tester si chaîne de caractères
@@ -97,19 +97,22 @@ exports.ratingBook = (req, res, next) => {
                     newRating
                     ];
 
-                book.updatedRatings = updatedRatings;
-                console.log(updatedRatings);
-                book
-                    .save()
-                    .then(() => {
-                    res.status(200).json({
-                        message: "Note enregistrée avec succès !",
-                        rating: newRating,
-                    });
-                })
+            const gradesSum = updatedRatings.reduce((sum, rating) => sum + rating.grade, 0);
+            const averageGrade = gradesSum / updatedRatings.length;
+
+            book.ratings = updatedRatings;
+            book.averageRating = averageGrade;
+            console.log(updatedRatings);
+            console.log(averageGrade);
+            
+            book.save()
+                .then(() => {
+                    res.status(200).json({ message: "Note enregistrée avec succès", averageGrade });
+                })                
                 .catch((error) => {
-                    res.status(500).json({ error });
+            res.status(500).json({ error });
                 });
+
             }
         })
             .catch((error) => {
@@ -118,88 +121,4 @@ exports.ratingBook = (req, res, next) => {
 };         
 
 
-/*function calcAverageRating(ratings) {
-                const sumRatings = ratings.reduce((total, rate) => total + rate.grade, 0);
-                const average = sumRatings / ratings.length;
-                return parseFloat(average.toFixed(2));
-            };
-            const updateAverageRating = calcAverageRating(updatedRatings);
-            Book.findOneAndUpdate(
-                { _id: req.params.id, 'ratings.userId': { $ne: user } },
-                { $push: { ratings: newRating }, averageRating: updateAverageRating },
-                { new: true }
-            )
-                .then(updatedBook => res.status(201).json(updatedBook))
-                .catch(error => res.status(401).json({ error }));*/
-        /*};
-    })
-    .catch(error => res.status(401).json({ error }));
-};*/
-/*exports.ratingBook = (req, res, next) => {
-    const user = req.body.userId;
-    if (user !== req.auth.userId) {
-        res.status(401).json({ message: 'Non autorisé' })
-    } else {
-        Book.findOne({ _id: req.params.id })
-            .then(book => {
-                if (book.ratings.find(rating => rating.userId === user)) {
-                    res.status(401).json({ message: 'Livre déjà noté' })
-                } else {
-                    const newRating = {
-                        userId: user,
-                        grade: req.body.rating,
-                        _id: req.body._id
-                    };
-                    const updatedRatings = [
-                        ...book.ratings,
-                        newRating
-                    ];
-                    function calcAverageRating(ratings) {
-                        const sumRatings = ratings.reduce((total, rate) => total + rate.grade, 0);
-                        const average = sumRatings / ratings.length;
-                        return parseFloat(average.toFixed(2));
-                    };
-                    const updateAverageRating = calcAverageRating(updatedRatings);
-                    Book.findOneAndUpdate(
-                        { _id: req.params.id, 'ratings.userId': { $ne: user } },
-                        { $push: { ratings: newRating }, averageRating: updateAverageRating },
-                        { new: true }
-                    )
-                        .then(updatedBook => res.status(201).json(updatedBook))
-                        .catch(error => res.status(401).json({ error }));
-                };
-            })
-            .catch(error => res.status(401).json({ error }));
-    }
-};*/
 
-
-
-
-
-
-
-
-        /*else {
-            // Ajouter la nouvelle note à l'array des notations
-            book.ratings.push({ userConnected, grade });
-        } 
-        book.save()
-        .then(() => {
-            res.status(200).json({ message: "Note ajoutée avec succès" });
-        })
-        .catch((error) => {
-            res.status(500).json({ error });
-        });
-    })
-    .catch((error) => {
-        res.status(500).json({ error });
-    });
-};*/
-    /*// Mettre à jour la note moyenne "averageRating"
-    const totalRatings = book.ratings.length;
-    let sumRatings = 0;
-    book.ratings.forEach((rating) => {
-        sumRatings += rating.grade;
-    });
-    book.averageRating = sumRatings / totalRatings;*/
