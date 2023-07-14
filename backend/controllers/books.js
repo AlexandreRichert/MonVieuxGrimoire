@@ -1,21 +1,40 @@
 
 const Book = require('../models/Book');
 const fs = require('fs');
+const sharp = require('sharp');
 
+//Ajout d'un livre
 exports.createBook = (req, res, next) => {
   const bookObject = JSON.parse(req.body.book);
   delete bookObject._id;
   delete bookObject._userId;
-  const book = new Book({
-      ...bookObject,
-      userId: req.auth.userId,
-      imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+
+  const imagePath = req.file.path;
+
+  // Chemin de destination pour l'image redimensionnée
+  const resizedImagePath = `${req.file.destination}/resized_${req.file.filename}`;
+
+  // Redimensionner l'image avec Sharp
+  sharp(imagePath)
+    .resize(800, 600) // Définissez les dimensions souhaitées pour l'image redimensionnée
+    .toFile(resizedImagePath)
+    .then(() => {
+      const book = new Book({
+        ...bookObject,
+        userId: req.auth.userId,
+        imageUrl: `${req.protocol}://${req.get('host')}/images/resized_${req.file.filename}`,
+        averageRating: bookObject.ratings[0].grade
+      });
+      book.save()
+      .then(() => { res.status(201).json({ message: 'Objet enregistré !' }) })
+      .catch(error => { res.status(400).json({ error }) });
+  })
+  .catch(error => {
+    res.status(500).json({ error });
   });
+};
 
-  book.save()
-  .then(() => { res.status(201).json({message: 'Objet enregistré !'})})
-  .catch(error => { res.status(400).json( { error })})}
-
+//Modification d'un livre
 exports.modifyBook = (req, res, next) => {
   const bookObject = req.file ? {
     ...JSON.parse(req.body.book),
@@ -38,6 +57,7 @@ Book.findOne({_id: req.params.id})
     });
 }
 
+//Suppression d'un livre
 exports.deleteBook = (req, res, next) => {
     Book.findOne({ _id: req.params.id})
         .then(book => {
@@ -57,19 +77,21 @@ exports.deleteBook = (req, res, next) => {
     });
 }
 
+//Affichage du livre cliqué
 exports.getOneBook = (req, res, next) => {
     Book.findOne({ _id: req.params.id })
         .then(book => res.status(200).json(book))
         .catch(error => res.status(404).json({ error }));
 }
 
+//Affichage de tous les livres publiés
 exports.getAllBooks = (req, res, next) => {
     Book.find()
         .then(books => res.status(200).json(books))
         .catch(error => res.status(400).json({ error }));
 }
 
-
+//Notation d'un livre+affichage de la moyenne des notes 
 exports.ratingBook = (req, res, next) => {
     let userConnected = req.body.userId;
     let grade = req.body.rating;
@@ -120,7 +142,7 @@ exports.ratingBook = (req, res, next) => {
     });
 };         
 
-
+//Affichage des 3 livres les mieux notés
 exports.getBestBooks = (req, res, next) => {
     Book.find().sort({ averageRating: -1 }).limit(3)
         .then(books => res.status(200).json(books))
