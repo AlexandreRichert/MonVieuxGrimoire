@@ -40,8 +40,8 @@ exports.modifyBook = (req, res, next) => {
     ...JSON.parse(req.body.book),
     imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
 } : { ...req.body };
-
 delete bookObject._userId;
+//Récupération du livre sélectionné
 Book.findOne({_id: req.params.id})
     .then((book) => {
         if (book.userId != req.auth.userId) {
@@ -127,20 +127,26 @@ exports.ratingBook = (req, res, next) => {
             console.log(updatedRatings);
             console.log(averageGrade);
 
-            book.save()
-                .then(() => {
-                    res.status(200).json({ message: "Note enregistrée avec succès", averageGrade });
+            return book.save();
+                /*.then(() => {
+                    res.status(200).json({ message: "Note enregistrée avec succès", book });
                 })                
                 .catch((error) => {
             res.status(500).json({ error });
-                });
+                });*/
 
             }
         })
-            .catch((error) => {
-            res.status(404).json({ error });
-    });
-};         
+        .then(book => {
+            console.log('Book saved:', book);
+            res.status(201).json(book);
+          })
+          .catch(error => {
+            console.error(error);
+            res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'évaluation du livre.' });
+          });
+      };
+
 
 //Affichage des 3 livres les mieux notés
 exports.getBestBooks = (req, res, next) => {
