@@ -12,7 +12,7 @@ mongoose.connect('mongodb+srv://firstuser:DQ3gWJZZ7KjS1tzL@cluster0.vdthjca.mong
   .then(() => console.log('Connexion à MongoDB réussie !'))
   .catch(() => console.log('Connexion à MongoDB échouée !'));
   
-  const app = express();
+const app = express();
 
 
 app.use((req, res, next) => {
